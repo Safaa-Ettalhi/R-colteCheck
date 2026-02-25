@@ -11,9 +11,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { db } from '../../firebaseConfig';
-import { collection, addDoc , getDocs, deleteDoc , doc} from 'firebase/firestore';
-
+import { auth, db } from '../../firebaseConfig';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 type Parcelle = {
   id: string;
   nom: string;
@@ -27,7 +26,15 @@ export default function ParcellesScreen() {
   useEffect(() => {
     const chargerParcelles = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'parcelles'));
+        const user = auth.currentUser;
+        if (!user) {
+          console.warn('Aucun utilisateur connecté, impossible de charger les parcelles.');
+          return;
+        }
+
+        const parcellesRef = collection(db, 'parcelles');
+        const q = query(parcellesRef, where('ownerUid', '==', user.uid));
+        const snapshot = await getDocs(q);
 
         const liste: Parcelle[] = snapshot.docs.map((parcelleDoc) => {
           const data = parcelleDoc.data();
@@ -69,41 +76,48 @@ export default function ParcellesScreen() {
 
   const surfaceTotaleDisplay =
     surfaceTotale > 0 ? surfaceTotale.toFixed(1).replace('.', ',') : '0';
-  const ajouterParcelle = async () => {
-    const nomTrim = nom.trim();
-    const surfaceTrim = surface.trim();
-
-    if (!nomTrim) {
-      alert('Le nom de la parcelle est obligatoire.');
-      return;
-    }
-
-    const parsedSurface = parseFloat(surfaceTrim.replace(',', '.'));
-    if (Number.isNaN(parsedSurface) || parsedSurface <= 0) {
-      alert('La surface doit être un nombre strictement supérieur à 0.');
-      return;
-    }
-
-    try {
-      const surfaceNumber = parsedSurface;
-      const docRef = await addDoc(collection(db, 'parcelles'), {
-        nom: nomTrim,
-        surface: surfaceNumber,
-        createdAt: new Date(),
-      });
-      const nouvelleParcelle: Parcelle = {
-        id: docRef.id, 
-        nom: nomTrim,
-        surface: surfaceNumber,
-      };
-      setParcelles((prev) => [...prev, nouvelleParcelle]);
-      setNom('');
-      setSurface('');
-    } catch (e) {
-      console.error('Erreur lors de l’ajout de la parcelle', e);
-      alert('Impossible d’ajouter la parcelle (voir console).');
-    }
-  };
+    const ajouterParcelle = async () => {
+      const nomTrim = nom.trim();
+      const surfaceTrim = surface.trim();
+  
+      if (!nomTrim) {
+        alert('Le nom de la parcelle est obligatoire.');
+        return;
+      }
+  
+      const parsedSurface = parseFloat(surfaceTrim.replace(',', '.'));
+      if (Number.isNaN(parsedSurface) || parsedSurface <= 0) {
+        alert('La surface doit être un nombre strictement supérieur à 0.');
+        return;
+      }
+  
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Vous devez être connecté pour ajouter une parcelle.');
+        return;
+      }
+  
+      try {
+        const surfaceNumber = parsedSurface;
+        const docRef = await addDoc(collection(db, 'parcelles'), {
+          nom: nomTrim,
+          surface: surfaceNumber,
+          ownerUid: user.uid,       
+          createdAt: new Date(),
+        });
+        const nouvelleParcelle: Parcelle = {
+          id: docRef.id,
+          nom: nomTrim,
+          surface: surfaceNumber,
+        };
+        setParcelles((prev) => [...prev, nouvelleParcelle]);
+        setNom('');
+        setSurface('');
+      } catch (e) {
+        console.error('Erreur lors de l’ajout de la parcelle', e);
+        alert('Impossible d’ajouter la parcelle (voir console).');
+      }
+    };
 
   const supprimerParcelle = async (id: string) => {
     try {
@@ -135,7 +149,7 @@ export default function ParcellesScreen() {
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Surface totale</Text>
               <Text style={styles.statValue}>
-                {surfaceTotale > 0 ? `${surfaceTotaleDisplay} ha` : '--'}
+                {surfaceTotale > 0 ? `${surfaceTotaleDisplay} ha` : '0 '}
               </Text>
             </View>
           </View>
