@@ -27,9 +27,12 @@ export default function ParcelleDetailsScreen() {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.card}>
+      <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>{nom ?? 'Nom inconnu'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>{nom ?? 'Nom inconnu'}</Text>
+              <Text style={styles.cardSubtitle}>Parcelle enregistrée dans RécolteCheck</Text>
+            </View>
             <Text style={styles.surfaceBadge}>
               {surface ? `${surface} ha` : 'Surface N/C'}
             </Text>
@@ -37,36 +40,48 @@ export default function ParcelleDetailsScreen() {
 
           <View style={styles.divider} />
 
-          <View style={styles.block}>
-            <Text style={styles.label}>Nom de la parcelle</Text>
-            <Text style={styles.value}>{nom ?? 'Nom inconnu'}</Text>
-          </View>
+          <View style={styles.blockRow}>
+            <View style={styles.block}>
+              <Text style={styles.label}>Nom de la parcelle</Text>
+              <Text style={styles.value}>{nom ?? 'Nom inconnu'}</Text>
+            </View>
 
-          <View style={styles.block}>
-            <Text style={styles.label}>Surface (ha)</Text>
-            <Text style={styles.value}>{surface ?? 'N/C'}</Text>
+            <View style={styles.block}>
+              <Text style={styles.label}>Surface (ha)</Text>
+              <Text style={styles.value}>{surface ?? 'N/C'}</Text>
+            </View>
           </View>
 
           <Text style={styles.helperText}>
-            Ces informations vous permettent de suivre facilement vos surfaces pour la
-            préparation de vos récoltes.
+            Utilisez cette fiche pour accéder rapidement aux récoltes et mettre à jour les
+            informations de la parcelle.
           </Text>
         </View>
-
         <View style={styles.actions}>
           {id && (
-            <Link
-              href={{ pathname: '/parcelle/[id]/edit', params: { id } }}
-              asChild
-            >
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>Modifier cette parcelle</Text>
-              </Pressable>
-            </Link>
+            <View style={styles.mainActionsRow}>
+              <Link
+                href={{ pathname: '/parcelle/[id]/recoltes', params: { id } }}
+                asChild
+              >
+                <Pressable style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Voir les récoltes</Text>
+                </Pressable>
+              </Link>
+
+              <Link
+                href={{ pathname: '/parcelle/[id]/edit', params: { id } }}
+                asChild
+              >
+                <Pressable style={styles.secondaryButton}>
+                  <Text style={styles.secondaryButtonText}>Modifier</Text>
+                </Pressable>
+              </Link>
+            </View>
           )}
 
-          <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
-            <Text style={styles.secondaryButtonText}>Retour à la liste</Text>
+          <Pressable style={styles.backLink} onPress={() => router.back()}>
+            <Text style={styles.backLinkText}>← Retour à la liste des parcelles</Text>
           </Pressable>
         </View>
       </View>
@@ -160,11 +175,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
   },
+  tertiaryButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tertiaryButtonText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+    cardSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  blockRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 4,
+  },
   actions: {
     marginTop: 24,
-    gap: 10,
+    gap: 12,
+  },
+  mainActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   primaryButton: {
+    flex: 1,
     backgroundColor: '#166534',
     borderRadius: 999,
     paddingVertical: 14,
@@ -176,12 +214,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryButton: {
-    paddingVertical: 12,
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 14,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#166534',
+    backgroundColor: '#ECFDF5',
   },
   secondaryButtonText: {
-    fontSize: 14,
-    color: '#374151',
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  backLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  backLinkText: {
+    fontSize: 13,
+    color: '#4B5563',
   },
 });
