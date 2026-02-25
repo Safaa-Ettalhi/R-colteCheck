@@ -86,15 +86,14 @@ export default function RegisterScreen() {
       router.push('/(tabs)');
     } catch (e: any) {
         console.error('Erreur Register', e);
+      
         if (e?.code === 'auth/email-already-in-use') {
-            alert('Cet email est déjà utilisé. Utilise un autre email ou connecte-toi.');
-          } else if (e?.code === 'auth/invalid-email') {
-            alert("L'email n'est pas valide.");
-          } else if (e?.code === 'auth/weak-password') {
-            alert('Mot de passe trop faible (au moins 6 caractères).');
-          } else {
-            alert(e?.message ?? 'Erreur lors de la création du compte');
-          }
+          alert('Cet email est déjà utilisé. Utilise un autre email ou connecte-toi.');
+        } else if (e?.code === 'auth/network-request-failed') {
+          alert('Problème de connexion internet. Vérifie ta connexion et réessaie.');
+        } else {
+          alert(e?.message ?? 'Erreur lors de la création du compte');
+        }
       } finally {
         setLoading(false);
       }
