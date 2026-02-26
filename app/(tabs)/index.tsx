@@ -10,6 +10,7 @@ import {
   Pressable,
   StatusBar,
   Platform,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Link, useFocusEffect } from 'expo-router';
@@ -185,13 +186,39 @@ export default function ParcellesScreen() {
       }
     };
 
-  const supprimerParcelle = async (id: string) => {
+    const supprimerParcelle = async (id: string) => {
+      Alert.alert(
+        'Supprimer la parcelle',
+        "Cette action va supprimer la parcelle et toutes les récoltes associées. Es-tu sûr de vouloir continuer ?",
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              supprimerParcelleEtRecoltes(id);
+            },
+          },
+        ],
+      );
+    };
+  const supprimerParcelleEtRecoltes = async (parcelleId: string) => {
     try {
-      await deleteDoc(doc(db, 'parcelles', id));
-      setParcelles((prev) => prev.filter((parcelle) => parcelle.id !== id));
+      const recoltesRef = collection(db, 'recoltes');
+      const q = query(recoltesRef, where('parcelleId', '==', parcelleId));
+      const snap = await getDocs(q);
+
+      const batchDeletions = snap.docs.map((docSnap) =>
+        deleteDoc(doc(db, 'recoltes', docSnap.id)),
+      );
+      await Promise.all(batchDeletions);
+
+      await deleteDoc(doc(db, 'parcelles', parcelleId));
+
+      setParcelles((prev) => prev.filter((parcelle) => parcelle.id !== parcelleId));
     } catch (e) {
-      console.error('Erreur lors de la suppression de la parcelle', e);
-      alert('Impossible de supprimer la parcelle (voir console).');
+      console.error('Erreur lors de la suppression de la parcelle et des récoltes', e);
+      alert("Impossible de supprimer la parcelle (voir console).");
     }
   };
   return (
