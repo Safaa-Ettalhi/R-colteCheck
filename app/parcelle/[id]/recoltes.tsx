@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -9,10 +9,21 @@ import {
   Pressable,
   FlatList,
   Platform,
-  ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { db, auth } from '../../../firebaseConfig';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+} from 'firebase/firestore';
 
 type Recolte = {
   id: string;
@@ -33,6 +44,44 @@ export default function RecoltesScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [remarques, setRemarques] = useState('');
   const [recoltes, setRecoltes] = useState<Recolte[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    const user = auth.currentUser;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    const chargerRecoltes = async () => {
+      setLoading(true);
+      try {
+        const q = query(
+          collection(db, 'recoltes'),
+          where('parcelleId', '==', id),
+          where('ownerUid', '==', user.uid)
+        );
+        const snap = await getDocs(q);
+        const liste: Recolte[] = snap.docs.map((docSnap) => {
+          const d = docSnap.data();
+          return {
+            id: docSnap.id,
+            date: d.date ?? '',
+            zone: d.zone ?? '',
+            poids: typeof d.poids === 'number' ? d.poids : Number(d.poids) || 0,
+            remarques: d.remarques ?? '',
+          };
+        });
+        setRecoltes(liste);
+      } catch (e) {
+        console.warn('Erreur chargement récoltes', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    chargerRecoltes();
+  }, [id]);
 
   const ouvrirDatePicker = () => {
     setShowDatePicker(true);
@@ -51,7 +100,7 @@ export default function RecoltesScreen() {
       setDate(formatted);
     }
   };
-  const ajouterRecolte = () => {
+  const ajouterRecolte = async () => {
     if (!date.trim()) {
       alert('La date est obligatoire.');
       return;
@@ -64,21 +113,73 @@ export default function RecoltesScreen() {
       return;
     }
 
-    const nouvelle: Recolte = {
-      id: Date.now().toString(),
-      date: date.trim(),
-      zone: zone.trim(),
-      poids: parsedPoids,
-      remarques: remarques.trim(),
-    };
-    setRecoltes((prev) => [...prev, nouvelle]);
-    setDate('');
-    setDateValue(null);
-    setZone('');
-    setPoids('');
-    setRemarques('');
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Vous devez être connecté pour enregistrer une récolte.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const docRef = await addDoc(collection(db, 'recoltes'), {
+        parcelleId: id,
+        ownerUid: user.uid,
+        date: date.trim(),
+        zone: zone.trim(),
+        poids: parsedPoids,
+        remarques: remarques.trim(),
+      });
+      const nouvelle: Recolte = {
+        id: docRef.id,
+        date: date.trim(),
+        zone: zone.trim(),
+        poids: parsedPoids,
+        remarques: remarques.trim(),
+      };
+      setRecoltes((prev) => [...prev, nouvelle]);
+      setDate('');
+      setDateValue(null);
+      setZone('');
+      setPoids('');
+      setRemarques('');
+    } catch (e) {
+      console.warn(e);
+      alert('Erreur lors de l\'enregistrement. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
   };
   const totalPoids = recoltes.reduce((sum, r) => sum + r.poids, 0);
+  
+  const supprimerRecolte = async (recolteId: string) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Vous devez être connecté pour supprimer une récolte.');
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'recoltes', recolteId));
+      setRecoltes((prev) => prev.filter((r) => r.id !== recolteId));
+    } catch (e) {
+      console.warn(e);
+      alert('Erreur lors de la suppression. Réessayez.');
+    }
+  };
+  const confirmerSuppressionRecolte = (recolteId: string) => {
+    Alert.alert(
+      'Supprimer la récolte',
+      'Es-tu sûr de vouloir supprimer cette récolte ? Cette action est définitive.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => supprimerRecolte(recolteId),
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -146,8 +247,16 @@ export default function RecoltesScreen() {
             />
           </View>
 
-          <Pressable style={styles.primaryButton} onPress={ajouterRecolte}>
-            <Text style={styles.primaryButtonText}>Enregistrer la récolte</Text>
+          <Pressable
+            style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
+            onPress={ajouterRecolte}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#ECFDF5" size="small" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Enregistrer la récolte</Text>
+            )}
           </Pressable>
         </View>
 
@@ -160,7 +269,14 @@ export default function RecoltesScreen() {
             Liste des récoltes saisies pour cette parcelle.
           </Text>
 
-          {recoltes.length === 0 ? (
+          {loading ? (
+            <View style={styles.historyEmpty}>
+              <ActivityIndicator size="large" color="#166534" />
+              <Text style={[styles.historyEmptyText, { marginTop: 8 }]}>
+                Chargement des récoltes…
+              </Text>
+            </View>
+          ) : recoltes.length === 0 ? (
             <View style={styles.historyEmpty}>
               <Text style={styles.historyEmptyTitle}>Aucune récolte enregistrée</Text>
               <Text style={styles.historyEmptyText}>
@@ -176,9 +292,17 @@ export default function RecoltesScreen() {
                 <View style={styles.recolteItem}>
                   <View style={styles.recolteHeaderRow}>
                     <Text style={styles.recolteDate}>{item.date}</Text>
-                    <Text style={styles.recoltePoids}>
-                      {item.poids.toFixed(1)} kg
-                    </Text>
+                    <View style={styles.recolteHeaderRight}>
+                      <Text style={styles.recoltePoids}>
+                        {item.poids.toFixed(1)} kg
+                      </Text>
+                      <Pressable
+                        onPress={() => confirmerSuppressionRecolte(item.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Text style={styles.deleteButtonText}>Supprimer</Text>
+                      </Pressable>
+                    </View>
                   </View>
 
                   <View style={styles.recolteChipsRow}>
@@ -283,6 +407,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  primaryButtonDisabled: {
+    opacity: 0.7,
+  },
   primaryButtonText: {
     color: '#ECFDF5',
     fontSize: 15,
@@ -309,7 +436,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
   },
-    historyHeaderRow: {
+  historyHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -410,5 +537,21 @@ const styles = StyleSheet.create({
   recolteChipSecondaryText: {
     fontSize: 12,
     color: '#4B5563',
+  },
+  recolteHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#FEE2E2',
+  },
+  deleteButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#B91C1C',
   },
 });
