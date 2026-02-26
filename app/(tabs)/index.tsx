@@ -36,6 +36,8 @@ export default function ParcellesScreen() {
   const [showDebutPicker, setShowDebutPicker] = useState(false);
   const [showFinPicker, setShowFinPicker] = useState(false);
   const [parcelles, setParcelles] = useState<Parcelle[]>([]);
+  const [totalRecoltesGlobal, setTotalRecoltesGlobal] = useState(0);
+  const [totalPoidsGlobal, setTotalPoidsGlobal] = useState(0);
 
   const chargerParcelles = useCallback(async () => {
     try {
@@ -72,6 +74,20 @@ export default function ParcellesScreen() {
       });
 
       setParcelles(liste);
+            const recoltesRef = collection(db, 'recoltes');
+            const qr = query(recoltesRef, where('ownerUid', '==', user.uid));
+            const recoltesSnap = await getDocs(qr);
+      
+            let totalPoids = 0;
+            recoltesSnap.forEach((docSnap) => {
+              const d = docSnap.data();
+              const poids =
+                typeof d.poids === 'number' ? d.poids : Number(d.poids) || 0;
+              totalPoids += poids;
+            });
+      
+            setTotalRecoltesGlobal(recoltesSnap.size);
+            setTotalPoidsGlobal(totalPoids);
     } catch (e) {
       console.error('Erreur lors du chargement des parcelles', e);
       alert('Impossible de charger les parcelles (voir console).');
@@ -246,7 +262,18 @@ export default function ParcellesScreen() {
               </Text>
             </View>
           </View>
-
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Récoltes totales</Text>
+              <Text style={styles.statValue}>{totalRecoltesGlobal}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Poids total récolté</Text>
+              <Text style={styles.statValue}>
+                {totalPoidsGlobal.toFixed(1).replace('.', ',')} kg
+              </Text>
+            </View>
+          </View>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Ajouter une parcelle</Text>
             <Text style={styles.cardSubtitle}>
