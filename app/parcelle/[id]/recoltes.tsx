@@ -23,6 +23,7 @@ import {
   where,
   deleteDoc,
   doc,
+  updateDoc,
 } from 'firebase/firestore';
 
 type Recolte = {
@@ -46,6 +47,7 @@ export default function RecoltesScreen() {
   const [recoltes, setRecoltes] = useState<Recolte[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -121,22 +123,48 @@ export default function RecoltesScreen() {
 
     setSaving(true);
     try {
-      const docRef = await addDoc(collection(db, 'recoltes'), {
-        parcelleId: id,
-        ownerUid: user.uid,
-        date: date.trim(),
-        zone: zone.trim(),
-        poids: parsedPoids,
-        remarques: remarques.trim(),
-      });
-      const nouvelle: Recolte = {
-        id: docRef.id,
-        date: date.trim(),
-        zone: zone.trim(),
-        poids: parsedPoids,
-        remarques: remarques.trim(),
-      };
-      setRecoltes((prev) => [...prev, nouvelle]);
+      if (editingId) {
+        await doc(db, 'recoltes', editingId);
+        await updateDoc(doc(db, 'recoltes', editingId), {
+          date: date.trim(),
+          zone: zone.trim(),
+          poids: parsedPoids,
+          remarques: remarques.trim(),
+        });
+
+        setRecoltes((prev) =>
+          prev.map((r) =>
+            r.id === editingId
+              ? {
+                ...r,
+                date: date.trim(),
+                zone: zone.trim(),
+                poids: parsedPoids,
+                remarques: remarques.trim(),
+              }
+              : r
+          )
+        );
+      } else {
+        const docRef = await addDoc(collection(db, 'recoltes'), {
+          parcelleId: id,
+          ownerUid: user.uid,
+          date: date.trim(),
+          zone: zone.trim(),
+          poids: parsedPoids,
+          remarques: remarques.trim(),
+        });
+        const nouvelle: Recolte = {
+          id: docRef.id,
+          date: date.trim(),
+          zone: zone.trim(),
+          poids: parsedPoids,
+          remarques: remarques.trim(),
+        };
+        setRecoltes((prev) => [...prev, nouvelle]);
+      }
+
+      setEditingId(null);
       setDate('');
       setDateValue(null);
       setZone('');
@@ -144,13 +172,13 @@ export default function RecoltesScreen() {
       setRemarques('');
     } catch (e) {
       console.warn(e);
-      alert('Erreur lors de l\'enregistrement. Réessayez.');
+      alert("Erreur lors de l'enregistrement. Réessayez.");
     } finally {
       setSaving(false);
     }
   };
   const totalPoids = recoltes.reduce((sum, r) => sum + r.poids, 0);
-  
+
   const supprimerRecolte = async (recolteId: string) => {
     const user = auth.currentUser;
     if (!user) {
@@ -181,6 +209,24 @@ export default function RecoltesScreen() {
     );
   };
 
+  const commencerEditionRecolte = (recolte: Recolte) => {
+    setEditingId(recolte.id);
+    setDate(recolte.date);
+    setZone(recolte.zone);
+    setPoids(recolte.poids.toString());
+    setRemarques(recolte.remarques);
+    setDateValue(null);
+  };
+
+  const annulerEdition = () => {
+    setEditingId(null);
+    setDate('');
+    setDateValue(null);
+    setZone('');
+    setPoids('');
+    setRemarques('');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
@@ -191,8 +237,9 @@ export default function RecoltesScreen() {
 
       <View style={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ajouter une récolte</Text>
-
+          <Text style={styles.cardTitle}>
+            {editingId ? 'Modifier une récolte' : 'Ajouter une récolte'}
+          </Text>
           <View style={styles.formGroup}>
             <Text style={styles.label}>Date</Text>
             <Pressable style={styles.input} onPress={ouvrirDatePicker}>
@@ -246,7 +293,6 @@ export default function RecoltesScreen() {
               onChangeText={setRemarques}
             />
           </View>
-
           <Pressable
             style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
             onPress={ajouterRecolte}
@@ -255,9 +301,17 @@ export default function RecoltesScreen() {
             {saving ? (
               <ActivityIndicator color="#ECFDF5" size="small" />
             ) : (
-              <Text style={styles.primaryButtonText}>Enregistrer la récolte</Text>
+              <Text style={styles.primaryButtonText}>
+                {editingId ? 'Mettre à jour la récolte' : 'Enregistrer la récolte'}
+              </Text>
             )}
           </Pressable>
+
+          {editingId && (
+            <Pressable style={styles.cancelEditButton} onPress={annulerEdition}>
+              <Text style={styles.cancelEditText}>Annuler la modification</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={[styles.card, { marginTop: 16, flex: 1 }]}>
@@ -285,17 +339,67 @@ export default function RecoltesScreen() {
             </View>
           ) : (
             <FlatList
-              data={recoltes}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ gap: 8, paddingTop: 8 }}
-              renderItem={({ item }) => (
-                <View style={styles.recolteItem}>
-                  <View style={styles.recolteHeaderRow}>
-                    <Text style={styles.recolteDate}>{item.date}</Text>
-                    <View style={styles.recolteHeaderRight}>
-                      <Text style={styles.recoltePoids}>
-                        {item.poids.toFixed(1)} kg
+            data={recoltes}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ gap: 12, paddingTop: 8, paddingBottom: 4 }}
+            renderItem={({ item, index }) => {
+              const accentColor =
+                index % 3 === 0
+                  ? '#22C55E'
+                  : index % 3 === 1
+                  ? '#0EA5E9'
+                  : '#F97316';
+              return (
+                <View style={[styles.recolteItem, { borderLeftColor: accentColor }]}>
+                  {/* badge + poids */}
+                  <View style={styles.recolteItemTopRow}>
+                    <View style={styles.recolteBadge}>
+                      <Text style={styles.recolteBadgeText}>
+                        Récolte #{index + 1}
                       </Text>
+                    </View>
+                    <Text style={styles.recoltePoids}>
+                      {item.poids.toFixed(1)} kg
+                    </Text>
+                  </View>
+
+                  {/* Date avec label */}
+                  <View style={styles.recolteDateRow}>
+                    <Text style={styles.recolteMetaLabel}>Date de récolte</Text>
+                    <Text style={styles.recolteDate}>{item.date}</Text>
+                  </View>
+
+                  <View style={styles.recolteBottomRow}>
+                    <View style={styles.recolteChipsRow}>
+                      {item.zone ? (
+                        <View style={styles.recolteChip}>
+                          <Text style={styles.recolteChipLabel}>Zone:</Text>
+                          <Text style={styles.recolteChipText}>{item.zone}</Text>
+                        </View>
+                      ) : null}
+
+                      {item.remarques ? (
+                        <View style={styles.recolteChipSecondary}>
+                          <Text style={styles.recolteChipLabel}>Remarque:</Text>
+                          <Text
+                            style={styles.recolteChipSecondaryText}
+                            numberOfLines={2}
+                          >
+                            {item.remarques}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+
+                  </View>
+                  <View style={styles.recolteActionsRow}>
+                      <Pressable
+                        onPress={() => commencerEditionRecolte(item)}
+                        style={styles.editButton}
+                      >
+                        <Text style={styles.editButtonText}>Modifier</Text>
+                      </Pressable>
                       <Pressable
                         onPress={() => confirmerSuppressionRecolte(item.id)}
                         style={styles.deleteButton}
@@ -303,28 +407,10 @@ export default function RecoltesScreen() {
                         <Text style={styles.deleteButtonText}>Supprimer</Text>
                       </Pressable>
                     </View>
-                  </View>
-
-                  <View style={styles.recolteChipsRow}>
-                    {item.zone ? (
-                      <View style={styles.recolteChip}>
-                        <Text style={styles.recolteChipLabel}>Zone : </Text>
-                        <Text style={styles.recolteChipText}>{item.zone}</Text>
-                      </View>
-                    ) : null}
-
-                    {item.remarques ? (
-                      <View style={styles.recolteChipSecondary}>
-                        <Text style={styles.recolteChipLabel}>Remarque : </Text>
-                        <Text style={styles.recolteChipSecondaryText}>
-                          {item.remarques}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
                 </View>
-              )}
-            />
+              );
+            }}
+          />
           )}
         </View>
 
@@ -470,28 +556,10 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontWeight: '700',
   },
-  recolteItem: {
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 2,
-  },
   recolteHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  recolteDate: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  recoltePoids: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#166534',
   },
   recolteZone: {
     fontSize: 12,
@@ -501,17 +569,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
   },
-  recolteChipsRow: {
+  recolteHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cancelEditButton: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  cancelEditText: {
+    fontSize: 12,
+    color: '#6B7280',
+    textDecorationLine: 'underline',
+  },
+  recolteDateRow: {
     marginTop: 4,
+  },
+  recolteMetaLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  recolteDate: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  recolteBottomRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  recolteChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    flex: 1,
   },
   recolteChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: '#E5F3FF',
@@ -520,7 +621,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: '#F3F4F6',
@@ -537,14 +638,98 @@ const styles = StyleSheet.create({
   recolteChipSecondaryText: {
     fontSize: 12,
     color: '#4B5563',
+    maxWidth: 160,
   },
-  recolteHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  recolteItem: {
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
     gap: 8,
   },
+  recolteItemTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recolteBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#DCFCE7',
+  },
+  recolteBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  recoltePoids: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#166534',
+  },
+
+  recolteRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  recolteLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  recolteValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#111827',
+    maxWidth: '60%',
+    textAlign: 'right',
+  },
+  recolteZoneValue: {
+    color: '#1D4ED8',
+  },
+
+  recolteRemarqueBlock: {
+    marginTop: 4,
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 2,
+  },
+  recolteRemarqueText: {
+    fontSize: 12,
+    color: '#4B5563',
+  },
+
+  recolteActionsRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  editButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#DBEAFE',
+  },
+  editButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1D4ED8',
+  },
   deleteButton: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: '#FEE2E2',
