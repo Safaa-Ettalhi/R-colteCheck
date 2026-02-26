@@ -18,6 +18,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from 'firebase/auth';
+import { useRouter } from 'expo-router';
 
 type UserProfile = {
   fullName: string;
@@ -29,6 +30,7 @@ type UserProfile = {
 };
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const [fullName, setFullName] = useState('');
@@ -185,6 +187,7 @@ export default function ProfileScreen() {
   const seDeconnecter = async () => {
     try {
       await signOut(auth);
+      router.replace('/(auth)/login');
     } catch (e) {
       console.error('Erreur déconnexion', e);
       alert('Impossible de se déconnecter.');
