@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,55 +6,153 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
+import { db } from '../../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+
+type ParcelleDetails = {
+  nom: string;
+  surface: string;
+  culture: string;
+  periodeDebut: string;
+  periodeFin: string;
+};
 
 export default function ParcelleDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
 
   const id = params.id as string | undefined;
-  const nom = params.nom as string | undefined;
-  const surface = params.surface as string | undefined;
 
+  const [details, setDetails] = useState<ParcelleDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const chargerDetails = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const ref = doc(db, 'parcelles', id);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+          alert("Cette parcelle n'existe plus.");
+          router.back();
+          return;
+        }
+
+        const data = snap.data();
+        const nom = (data.nom as string) ?? '';
+
+        let surfaceDisplay = 'N/C';
+        const rawSurface = data.surface;
+        if (typeof rawSurface === 'number') {
+          surfaceDisplay = rawSurface.toString();
+        } else if (typeof rawSurface === 'string' && rawSurface.trim() !== '') {
+          surfaceDisplay = rawSurface;
+        }
+
+        const culture = (data.culture as string) ?? '';
+        const periodeDebut = (data.periodeDebut as string) ?? '';
+        const periodeFin = (data.periodeFin as string) ?? '';
+
+        setDetails({
+          nom,
+          surface: surfaceDisplay,
+          culture,
+          periodeDebut,
+          periodeFin,
+        });
+      } catch (e) {
+        console.error('Erreur chargement détails parcelle', e);
+        alert('Impossible de charger les détails de la parcelle.');
+        router.back();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    chargerDetails();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar backgroundColor="#166534" barStyle="light-content" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Chargement de la parcelle...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!details) {
+    return null;
+  }
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Détails de la parcelle</Text>
-        <Text style={styles.headerSubtitle}>{nom ?? 'Nom inconnu'}</Text>
+        <Text style={styles.headerSubtitle}>
+          {details.nom || 'Nom inconnu'}
+        </Text>
       </View>
 
       <View style={styles.content}>
-      <View style={styles.card}>
+        <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{nom ?? 'Nom inconnu'}</Text>
+              <Text style={styles.cardTitle}>
+                {details.nom || 'Nom inconnu'}
+              </Text>
               <Text style={styles.cardSubtitle}>Parcelle enregistrée dans RécolteCheck</Text>
             </View>
             <Text style={styles.surfaceBadge}>
-              {surface ? `${surface} ha` : 'Surface N/C'}
+              {details.surface ? `${details.surface} ha` : 'Surface N/C'}
             </Text>
           </View>
 
           <View style={styles.divider} />
 
-          <View style={styles.blockRow}>
-            <View style={styles.block}>
-              <Text style={styles.label}>Nom de la parcelle</Text>
-              <Text style={styles.value}>{nom ?? 'Nom inconnu'}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Surface</Text>
+              <Text style={styles.statValue}>
+                {details.surface ? `${details.surface} ha` : 'N/C'}
+              </Text>
             </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Culture</Text>
+              <Text style={styles.statValue}>
+                {details.culture && details.culture.trim() !== ''
+                  ? details.culture
+                  : 'Non renseignée'}
+              </Text>
+            </View>
+          </View>
 
-            <View style={styles.block}>
-              <Text style={styles.label}>Surface (ha)</Text>
-              <Text style={styles.value}>{surface ?? 'N/C'}</Text>
+          <View style={[styles.statsRow, { marginTop: 8 }]}>
+            <View style={[styles.statCard, { flex: 1 }]}>
+              <Text style={styles.statLabel}>Période de récolte</Text>
+              <Text style={styles.statValue}>
+                {details.periodeDebut || details.periodeFin
+                  ? `${details.periodeDebut || '?'} - ${details.periodeFin || '?'}`
+                  : 'Non renseignée'}
+              </Text>
             </View>
           </View>
 
           <Text style={styles.helperText}>
-            Utilisez cette fiche pour accéder rapidement aux récoltes et mettre à jour les
-            informations de la parcelle.
+            Depuis cette fiche, vous pouvez consulter l&apos;historique des récoltes
+            et ajuster les informations de la parcelle.
           </Text>
         </View>
         <View style={styles.actions}>
@@ -126,10 +224,10 @@ const styles = StyleSheet.create({
     padding: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-    gap: 14,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 16,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -156,10 +254,8 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#E5E7EB',
-    marginVertical: 4,
-  },
-  block: {
-    gap: 4,
+    marginTop: 10,
+    marginBottom: 6,
   },
   label: {
     fontSize: 13,
@@ -184,14 +280,33 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontWeight: '500',
   },
-    cardSubtitle: {
+  cardSubtitle: {
     fontSize: 12,
     color: '#6B7280',
   },
-  blockRow: {
+  statsRow: {
+    marginTop: 10,
     flexDirection: 'row',
-    gap: 16,
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  statValue: {
     marginTop: 4,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
   },
   actions: {
     marginTop: 24,
@@ -234,5 +349,16 @@ const styles = StyleSheet.create({
   backLinkText: {
     fontSize: 13,
     color: '#4B5563',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#E5E7EB',
   },
 });
