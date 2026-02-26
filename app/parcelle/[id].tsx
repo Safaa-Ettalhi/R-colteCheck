@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { db } from '../../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 
 type ParcelleDetails = {
   nom: string;
@@ -28,6 +28,8 @@ export default function ParcelleDetailsScreen() {
 
   const [details, setDetails] = useState<ParcelleDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [totalRecoltes, setTotalRecoltes] = useState(0);
+  const [totalPoids, setTotalPoids] = useState(0);
 
   useEffect(() => {
     const chargerDetails = async () => {
@@ -68,6 +70,20 @@ export default function ParcelleDetailsScreen() {
           periodeDebut,
           periodeFin,
         });
+               
+        const recoltesRef = collection(db, 'recoltes');
+        const q = query(recoltesRef, where('parcelleId', '==', id));
+        const recoltesSnap = await getDocs(q);
+        
+        let total = 0;
+        recoltesSnap.forEach((docSnap) => {
+            const d = docSnap.data();
+            const poids = typeof d.poids === 'number' ? d.poids : Number(d.poids) || 0;
+            total += poids;
+        });
+        
+        setTotalRecoltes(recoltesSnap.size);
+        setTotalPoids(total);
       } catch (e) {
         console.error('Erreur chargement détails parcelle', e);
         alert('Impossible de charger les détails de la parcelle.');
@@ -119,6 +135,27 @@ export default function ParcelleDetailsScreen() {
               {details.surface ? `${details.surface} ha` : 'Surface N/C'}
             </Text>
           </View>
+
+          {totalRecoltes > 0 ? (
+            <View style={styles.recolteSummaryRow}>
+              <View style={styles.recolteSummaryChip}>
+                <Text style={styles.recolteSummaryLabel}>Récoltes</Text>
+                <Text style={styles.recolteSummaryValue}>
+                  {totalRecoltes}
+                </Text>
+              </View>
+              <View style={styles.recolteSummaryChip}>
+                <Text style={styles.recolteSummaryLabel}>Total récolté</Text>
+                <Text style={styles.recolteSummaryValue}>
+                  {totalPoids.toFixed(1)} kg
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.recolteSummaryEmpty}>
+              Aucune récolte enregistrée pour cette parcelle.
+            </Text>
+          )}
 
           <View style={styles.divider} />
 
@@ -360,5 +397,34 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
     color: '#E5E7EB',
+  },
+  recolteSummaryRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  recolteSummaryChip: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  recolteSummaryLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  recolteSummaryValue: {
+    marginTop: 2,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  recolteSummaryEmpty: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#6B7280',
   },
 });
