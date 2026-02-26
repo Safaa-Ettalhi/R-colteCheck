@@ -150,7 +150,7 @@ export default function ParcelleEditScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <StatusBar backgroundColor="#166534" barStyle="light-content" />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#166534" />
