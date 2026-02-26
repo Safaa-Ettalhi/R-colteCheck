@@ -456,27 +456,27 @@ export default function ParcellesScreen() {
             )}
           </View>
 
-{parcelles.length === 0 ? (
-  <View style={styles.emptyState}>
-    <Text style={styles.emptyTitle}>Aucune parcelle pour le moment</Text>
-    <Text style={styles.emptyText}>
-      Ajoutez votre première parcelle avec le formulaire ci-dessus.
-    </Text>
-  </View>
-) : parcellesFiltrees.length === 0 ? (
-  <View style={styles.emptyState}>
-    <Text style={styles.emptyTitle}>Aucune parcelle trouvée</Text>
-    <Text style={styles.emptyText}>
-      Aucun résultat ne correspond au nom ou à la culture sélectionnée.
-    </Text>
-  </View>
-) : (
-  <FlatList
-    data={parcelles}
-    keyExtractor={(item) => item.id}
-    scrollEnabled={false}
-    contentContainerStyle={{ gap: 12 }}
-    renderItem={({ item }) => (
+          {parcelles.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Aucune parcelle pour le moment</Text>
+              <Text style={styles.emptyText}>
+                Ajoutez votre première parcelle avec le formulaire ci-dessus.
+              </Text>
+            </View>
+          ) : parcellesFiltrees.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Aucune parcelle trouvée</Text>
+              <Text style={styles.emptyText}>
+                Aucun résultat ne correspond au nom ou à la culture sélectionnée.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={parcellesFiltrees}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              contentContainerStyle={{ gap: 12 }}
+              renderItem={({ item }) => (
       <View style={styles.parcelleCard}>
         <View style={styles.parcelleHeaderRow}>
           <Text style={styles.parcelleName}>{item.nom}</Text>
@@ -546,10 +546,9 @@ export default function ParcellesScreen() {
             <Text style={styles.deleteButtonText}>Supprimer</Text>
           </Pressable>
         </View>
-      </View>
-    )}
-  />
-)}
+              </View>
+            )}
+          />)}
         </ScrollView>
       </View>
     </SafeAreaView>
