@@ -39,6 +39,9 @@ export default function ParcellesScreen() {
   const [totalRecoltesGlobal, setTotalRecoltesGlobal] = useState(0);
   const [totalPoidsGlobal, setTotalPoidsGlobal] = useState(0);
 
+  const [filtreNom, setFiltreNom] = useState('');
+  const [filtreCulture, setFiltreCulture] = useState<string | null>(null);
+
   const chargerParcelles = useCallback(async () => {
     try {
       const user = auth.currentUser;
@@ -118,6 +121,25 @@ export default function ParcellesScreen() {
     const year = d.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  const culturesDisponibles = Array.from(
+    new Set(
+      parcelles
+        .map((p) => p.culture)
+        .filter((c): c is string => !!c && c.trim() !== ''),
+    ),
+  );
+
+  const parcellesFiltrees = parcelles.filter((p) => {
+    const matchNom =
+      filtreNom.trim() === '' ||
+      p.nom.toLowerCase().includes(filtreNom.trim().toLowerCase());
+
+    const matchCulture =
+      !filtreCulture || p.culture === filtreCulture;
+
+    return matchNom && matchCulture;
+  });
 
   const ouvrirDebutPicker = () => {
     setShowDebutPicker(true);
@@ -274,6 +296,7 @@ export default function ParcellesScreen() {
               </Text>
             </View>
           </View>
+
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Ajouter une parcelle</Text>
             <Text style={styles.cardSubtitle}>
@@ -367,15 +390,84 @@ export default function ParcellesScreen() {
           <View style={styles.listHeaderRow}>
   <Text style={styles.sectionTitle}>Mes parcelles</Text>
   <Text style={styles.sectionCount}>
-    {parcelles.length} {parcelles.length <= 1 ? 'parcelle' : 'parcelles'}
+    {parcellesFiltrees.length}{' '}
+    {parcellesFiltrees.length <= 1 ? 'parcelle' : 'parcelles'}
   </Text>
+  
 </View>
+<View style={styles.filtersCard}>
+            <Text style={styles.filtersTitle}>Filtrer les parcelles</Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Rechercher par nom</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Tape le nom de la parcelle"
+                placeholderTextColor="#9CA3AF"
+                value={filtreNom}
+                onChangeText={setFiltreNom}
+              />
+            </View>
+
+            {culturesDisponibles.length > 0 && (
+              <View style={styles.filtersChipsRow}>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    !filtreCulture && styles.filterChipActive,
+                  ]}
+                  onPress={() => setFiltreCulture(null)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      !filtreCulture && styles.filterChipTextActive,
+                    ]}
+                  >
+                    Toutes les cultures
+                  </Text>
+                </Pressable>
+
+                {culturesDisponibles.map((cultureValue) => (
+                  <Pressable
+                    key={cultureValue}
+                    style={[
+                      styles.filterChip,
+                      filtreCulture === cultureValue && styles.filterChipActive,
+                    ]}
+                    onPress={() =>
+                      setFiltreCulture(
+                        filtreCulture === cultureValue ? null : cultureValue,
+                      )
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        filtreCulture === cultureValue &&
+                          styles.filterChipTextActive,
+                      ]}
+                    >
+                      {cultureValue}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
 
 {parcelles.length === 0 ? (
   <View style={styles.emptyState}>
     <Text style={styles.emptyTitle}>Aucune parcelle pour le moment</Text>
     <Text style={styles.emptyText}>
       Ajoutez votre première parcelle avec le formulaire ci-dessus.
+    </Text>
+  </View>
+) : parcellesFiltrees.length === 0 ? (
+  <View style={styles.emptyState}>
+    <Text style={styles.emptyTitle}>Aucune parcelle trouvée</Text>
+    <Text style={styles.emptyText}>
+      Aucun résultat ne correspond au nom ou à la culture sélectionnée.
     </Text>
   </View>
 ) : (
@@ -713,5 +805,45 @@ const styles = StyleSheet.create({
   },
   inputHalf: {
     flex: 1,
+  },
+  filtersCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 8,
+  },
+  filtersTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  filtersChipsRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+  },
+  filterChipActive: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#16A34A',
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: '#374151',
+  },
+  filterChipTextActive: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#166534',
   },
 });
