@@ -4,11 +4,11 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link ,useRouter } from 'expo-router';
 import { auth } from '../../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -44,7 +44,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.appTitle}>RécolteCheck</Text>

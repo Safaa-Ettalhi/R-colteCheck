@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
@@ -112,7 +112,7 @@ export default function ParcelleDetailsScreen() {
     return null;
   }
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
 
       <View style={styles.header}>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { db, auth } from '../../../firebaseConfig';
@@ -228,7 +228,7 @@ export default function RecoltesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.title}>Récoltes de la parcelle</Text>

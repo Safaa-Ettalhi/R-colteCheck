@@ -4,12 +4,12 @@ import {
     Text,
     TextInput,
     StyleSheet,
-    SafeAreaView,
     StatusBar,
     Pressable,
     ActivityIndicator,
     Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -161,7 +161,7 @@ export default function ParcelleEditScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
             <StatusBar backgroundColor="#166534" barStyle="light-content" />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Modifier la parcelle</Text>

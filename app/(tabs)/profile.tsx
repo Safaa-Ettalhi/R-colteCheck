@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -10,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebaseConfig';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import {
@@ -193,7 +193,7 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar backgroundColor="#166534" barStyle="light-content" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#166534" />
@@ -205,7 +205,7 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar backgroundColor="#166534" barStyle="light-content" />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Aucun utilisateur connecté.</Text>
@@ -215,7 +215,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.appTitle}>Mon profil</Text>
