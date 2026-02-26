@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,61 +9,79 @@ import {
   ScrollView,
   Pressable,
   StatusBar,
+  Platform,
 } from 'react-native';
-import { Link } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Link, useFocusEffect } from 'expo-router';
 import { auth, db } from '../../firebaseConfig';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 type Parcelle = {
   id: string;
   nom: string;
   surface: number | null;
+  culture?: string;
+  periodeDebut?: string;
+  periodeFin?: string;
 };
 
 export default function ParcellesScreen() {
   const [nom, setNom] = useState('');
   const [surface, setSurface] = useState('');
+  const [culture, setCulture] = useState('');
+  const [periodeDebut, setPeriodeDebut] = useState('');
+  const [periodeFin, setPeriodeFin] = useState('');
+  const [periodeDebutValue, setPeriodeDebutValue] = useState<Date | null>(null);
+  const [periodeFinValue, setPeriodeFinValue] = useState<Date | null>(null);
+  const [showDebutPicker, setShowDebutPicker] = useState(false);
+  const [showFinPicker, setShowFinPicker] = useState(false);
   const [parcelles, setParcelles] = useState<Parcelle[]>([]);
-  useEffect(() => {
-    const chargerParcelles = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          console.warn('Aucun utilisateur connecté, impossible de charger les parcelles.');
-          return;
+
+  const chargerParcelles = useCallback(async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn('Aucun utilisateur connecté, impossible de charger les parcelles.');
+        return;
+      }
+
+      const parcellesRef = collection(db, 'parcelles');
+      const q = query(parcellesRef, where('ownerUid', '==', user.uid));
+      const snapshot = await getDocs(q);
+
+      const liste: Parcelle[] = snapshot.docs.map((parcelleDoc) => {
+        const data = parcelleDoc.data();
+        const rawSurface = data.surface;
+
+        let numericSurface: number | null = null;
+        if (typeof rawSurface === 'number') {
+          numericSurface = rawSurface > 0 ? rawSurface : null;
+        } else if (typeof rawSurface === 'string') {
+          const parsed = parseFloat(rawSurface.replace(',', '.'));
+          numericSurface = !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
         }
 
-        const parcellesRef = collection(db, 'parcelles');
-        const q = query(parcellesRef, where('ownerUid', '==', user.uid));
-        const snapshot = await getDocs(q);
+        return {
+          id: parcelleDoc.id,
+          nom: (data.nom as string) ?? '',
+          surface: numericSurface,
+          culture: (data.culture as string) ?? '',
+          periodeDebut: (data.periodeDebut as string) ?? '',
+          periodeFin: (data.periodeFin as string) ?? '',
+        };
+      });
 
-        const liste: Parcelle[] = snapshot.docs.map((parcelleDoc) => {
-          const data = parcelleDoc.data();
-          const rawSurface = data.surface;
-
-          let numericSurface: number | null = null;
-          if (typeof rawSurface === 'number') {
-            numericSurface = rawSurface > 0 ? rawSurface : null;
-          } else if (typeof rawSurface === 'string') {
-            const parsed = parseFloat(rawSurface.replace(',', '.'));
-            numericSurface = !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
-          }
-
-          return {
-            id: parcelleDoc.id,
-            nom: (data.nom as string) ?? '',
-            surface: numericSurface,
-          };
-        });
-
-        setParcelles(liste);
-      } catch (e) {
-        console.error('Erreur lors du chargement des parcelles', e);
-        alert('Impossible de charger les parcelles (voir console).');
-      }
-    };
-
-    chargerParcelles();
+      setParcelles(liste);
+    } catch (e) {
+      console.error('Erreur lors du chargement des parcelles', e);
+      alert('Impossible de charger les parcelles (voir console).');
+    }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      chargerParcelles();
+    }, [chargerParcelles]),
+  );
 
   const totalParcelles = parcelles.length;
 
@@ -76,9 +94,48 @@ export default function ParcellesScreen() {
 
   const surfaceTotaleDisplay =
     surfaceTotale > 0 ? surfaceTotale.toFixed(1).replace('.', ',') : '0';
-    const ajouterParcelle = async () => {
+
+  const formatDate = (d: Date) => {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const ouvrirDebutPicker = () => {
+    setShowDebutPicker(true);
+  };
+
+  const ouvrirFinPicker = () => {
+    setShowFinPicker(true);
+  };
+
+  const onChangeDebut = (_: any, selectedDate?: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDebutPicker(false);
+    }
+    if (selectedDate) {
+      setPeriodeDebutValue(selectedDate);
+      setPeriodeDebut(formatDate(selectedDate));
+    }
+  };
+
+  const onChangeFin = (_: any, selectedDate?: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowFinPicker(false);
+    }
+    if (selectedDate) {
+      setPeriodeFinValue(selectedDate);
+      setPeriodeFin(formatDate(selectedDate));
+    }
+  };
+
+  const ajouterParcelle = async () => {
       const nomTrim = nom.trim();
       const surfaceTrim = surface.trim();
+      const cultureTrim = culture.trim();
+      const periodeDebutTrim = periodeDebut.trim();
+      const periodeFinTrim = periodeFin.trim();
   
       if (!nomTrim) {
         alert('Le nom de la parcelle est obligatoire.');
@@ -102,17 +159,26 @@ export default function ParcellesScreen() {
         const docRef = await addDoc(collection(db, 'parcelles'), {
           nom: nomTrim,
           surface: surfaceNumber,
-          ownerUid: user.uid,       
+          culture: cultureTrim,
+          periodeDebut: periodeDebutTrim,
+          periodeFin: periodeFinTrim,
+          ownerUid: user.uid,
           createdAt: new Date(),
         });
         const nouvelleParcelle: Parcelle = {
           id: docRef.id,
           nom: nomTrim,
           surface: surfaceNumber,
+          culture: cultureTrim,
+          periodeDebut: periodeDebutTrim,
+          periodeFin: periodeFinTrim,
         };
         setParcelles((prev) => [...prev, nouvelleParcelle]);
         setNom('');
         setSurface('');
+        setCulture('');
+        setPeriodeDebut('');
+        setPeriodeFin('');
       } catch (e) {
         console.error('Erreur lors de l’ajout de la parcelle', e);
         alert('Impossible d’ajouter la parcelle (voir console).');
@@ -182,7 +248,63 @@ export default function ParcellesScreen() {
                 keyboardType="numeric"
               />
             </View>
+            <View style={styles.formGroup}>
+            <Text style={styles.label}>Culture</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex : Blé dur"
+              placeholderTextColor="#9CA3AF"
+              value={culture}
+              onChangeText={setCulture}
+            />
+          </View>
 
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Période de récolte</Text>
+            <View style={styles.formRowTwo}>
+              <Pressable
+                style={[styles.input, styles.inputHalf]}
+                onPress={ouvrirDebutPicker}
+              >
+                <Text
+                  style={
+                    periodeDebut ? styles.dateText : styles.datePlaceholder
+                  }
+                >
+                  {periodeDebut || 'Début (JJ/MM/AAAA)'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.input, styles.inputHalf]}
+                onPress={ouvrirFinPicker}
+              >
+                <Text
+                  style={periodeFin ? styles.dateText : styles.datePlaceholder}
+                >
+                  {periodeFin || 'Fin (JJ/MM/AAAA)'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {showDebutPicker && (
+              <DateTimePicker
+                value={periodeDebutValue || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onChangeDebut}
+              />
+            )}
+
+            {showFinPicker && (
+              <DateTimePicker
+                value={periodeFinValue || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onChangeFin}
+              />
+            )}
+          </View>
             <Pressable style={styles.primaryButton} onPress={ajouterParcelle}>
               <Text style={styles.primaryButtonText}>Enregistrer la parcelle</Text>
             </Pressable>
@@ -219,12 +341,37 @@ export default function ParcellesScreen() {
           </Text>
         </View>
 
+        {(item.culture || item.periodeDebut || item.periodeFin) && (
+          <View style={styles.parcelleMetaContainer}>
+            {item.culture ? (
+              <Text style={styles.parcelleMeta}>
+                <Text style={styles.parcelleMetaLabel}>Culture : </Text>
+                {item.culture}
+              </Text>
+            ) : null}
+
+            {item.periodeDebut || item.periodeFin ? (
+              <Text style={styles.parcelleMeta}>
+                <Text style={styles.parcelleMetaLabel}>Période de récolte : </Text>
+                {(item.periodeDebut || '?') + ' - ' + (item.periodeFin || '?')}
+              </Text>
+            ) : null}
+          </View>
+        )}
+
         <View style={styles.parcelleFooterRow}>
           <View style={styles.parcelleActionsRow}>
-            <Link
+          <Link
               href={{
                 pathname: '/parcelle/[id]',
-                params: { id: item.id, nom: item.nom, surface: item.surface },
+                params: {
+                  id: item.id,
+                  nom: item.nom,
+                  surface: item.surface,
+                  culture: item.culture ?? '',
+                  periodeDebut: item.periodeDebut ?? '',
+                  periodeFin: item.periodeFin ?? '',
+                },
               }}
               asChild
             >
@@ -359,6 +506,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
   },
+  dateText: {
+    fontSize: 14,
+    color: '#111827',
+  },
+  datePlaceholder: {
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
   primaryButton: {
     marginTop: 12,
     backgroundColor: '#16A34A',
@@ -447,8 +602,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  parcelleMetaContainer: {
+    marginTop: 4,
+    gap: 2,
+  },
   parcelleMeta: {
     fontSize: 12,
+    color: '#4B5563',
+  },
+  parcelleMetaLabel: {
+    fontWeight: '600',
     color: '#6B7280',
   },
   parcelleActionsRow: {
@@ -489,5 +652,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#B91C1C',
+  },
+  formRowTwo: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  inputHalf: {
+    flex: 1,
   },
 });
