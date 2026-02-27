@@ -22,13 +22,39 @@
       - `[id].tsx` : détails d’une parcelle, lecture de `parcelles/{id}` + stats sur les récoltes associées.
       - `[id]/edit.tsx` : édition d’une parcelle existante (`updateDoc` sur Firestore).
       - `[id]/recoltes.tsx` : création, modification, suppression et listing des récoltes liées à une parcelle.
-  - `firebaseConfig.ts`
+- `firebaseConfig.ts`
     - Initialisation de l’app Firebase avec `initializeApp`.
     - Exporte :
       - `db = getFirestore(app)` pour Firestore.
       - `auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` pour l’authentification avec persistance locale.
   - `constants/theme.ts`, `components/`, `hooks/`
     - Regroupent le thème de couleur, les composants UI réutilisables (icônes, onglets haptiques) et le hook de thème (`use-color-scheme`).
+
+### Architecture fonctionnelle et modèle de données
+
+- **Application cliente** : Expo / React Native (RécolteCheck sur mobile)
+- **Backend managé** : Firebase
+  - **Auth** : gestion des comptes utilisateurs (email + mot de passe)
+  - **Firestore** : base de données NoSQL
+
+#### Modèle de données (Firestore)
+
+- **users**
+  - `users/{uid}`  
+    - `fullName`, `birthDate`, `city`, `gender`, `zone`, `email`, `createdAt`
+
+- **parcelles**
+  - `parcelles/{parcelleId}`  
+    - `nom`, `surface`, `culture`, `periodeDebut`, `periodeFin`, `ownerUid`, `createdAt`
+
+- **recoltes**
+  - `recoltes/{recolteId}`  
+    - `parcelleId`, `ownerUid`, `date`, `zone`, `poids`, `remarques`
+
+Relationnellement :
+
+- Un **user** possède plusieurs **parcelles** (`parcelles.ownerUid = auth.uid`)
+- Une **parcelle** possède plusieurs **récoltes** (`recoltes.parcelleId = parcelles.id`)
 
 ### Guide d’installation et de configuration
 
