@@ -19,6 +19,7 @@ import {
   EmailAuthProvider,
 } from 'firebase/auth';
 import { useRouter } from 'expo-router';
+import LoadingScreen from '@/components/LoadingScreen';
 
 type UserProfile = {
   fullName: string;
@@ -195,26 +196,11 @@ export default function ProfileScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar backgroundColor="#166534" barStyle="light-content" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Chargement du profil...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Chargement du profil..." />;
   }
 
   if (!profile) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar backgroundColor="#166534" barStyle="light-content" />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Aucun utilisateur connecté.</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Aucun utilisateur connecté." />;
   }
 
   return (
@@ -491,15 +477,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: '#166534',
   },
   loadingText: {
-    marginTop: 12,
     fontSize: 14,
-    color: '#FFFFFF',
   },
   scrollContent: {
     paddingBottom: 32,
