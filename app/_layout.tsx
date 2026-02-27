@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { auth } from '../firebaseConfig';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -29,16 +30,7 @@ export default function RootLayout() {
   if (user === undefined) {
     return (
       <ThemeProvider value={theme}>
-        <View
-          style={{
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#166534',
-          }}
-        >
-          <ActivityIndicator size="large" color="#FFFFFF" />
-        </View>
+        <LoadingScreen message="Chargement de l'application..." />
       </ThemeProvider>
     );
   }
