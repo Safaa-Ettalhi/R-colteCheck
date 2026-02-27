@@ -1,50 +1,105 @@
-# Welcome to your Expo app 👋
+## RécolteCheck – Documentation du projet mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+### Dépôt GitHub
 
-## Get started
+Le code source de cette application est hébergé sur GitHub :  
+[`https://github.com/Safaa-Ettalhi/R-colteCheck`](https://github.com/Safaa-Ettalhi/R-colteCheck)
 
-1. Install dependencies
+### Architecture de l’application
 
-   ```bash
-   npm install
-   ```
+- **Stack principale**
+  - **Expo / React Native / React** pour une application mobile multiplateforme.
+  - **expo-router** pour la navigation basée sur la structure de dossiers dans `app/`.
+  - **Firebase** (Auth + Firestore) comme backend managé.
 
-2. Start the app
+- **Organisation des dossiers**
+  - `app/`
+    - `_layout.tsx` : racine de la navigation, écoute Firebase Auth et envoie vers `(auth)` ou `(tabs)` selon que l’utilisateur est connecté.
+    - `(auth)/` : écrans d’authentification.
+      - `_layout.tsx` : Stack sans header.
+      - `login.tsx` : connexion email / mot de passe.
+      - `register.tsx` : création de compte et document `users/{uid}` minimal.
+    - `(tabs)/` : navigation par onglets pour les utilisateurs connectés.
+      - `_layout.tsx` : définition des onglets "Parcelles" et "Profil".
+      - `index.tsx` : écran principal des parcelles (liste, création, statistiques globales).
+      - `profile.tsx` : gestion du profil utilisateur (infos personnelles, mot de passe, déconnexion).
+    - `parcelle/`
+      - `[id].tsx` : détails d’une parcelle, lecture de `parcelles/{id}` + stats sur les récoltes associées.
+      - `[id]/edit.tsx` : édition d’une parcelle existante (`updateDoc` sur Firestore).
+      - `[id]/recoltes.tsx` : création, modification, suppression et listing des récoltes liées à une parcelle.
+  - `firebaseConfig.ts`
+    - Initialisation de l’app Firebase avec `initializeApp`.
+    - Exporte :
+      - `db = getFirestore(app)` pour Firestore.
+      - `auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) })` pour l’authentification avec persistance locale.
+  - `constants/theme.ts`, `components/`, `hooks/`
+    - Regroupent le thème de couleur, les composants UI réutilisables (icônes, onglets haptiques) et le hook de thème (`use-color-scheme`).
 
-   ```bash
-   npx expo start
-   ```
+### Guide d’installation et de configuration
 
-In the output, you'll find options to open the app in a
+- **1. Pré-requis**
+  - Node.js (version LTS recommandée).
+  - npm, yarn ou pnpm.
+  - Optionnel : Expo CLI installé globalement.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **2. Installation**
+  - Depuis la racine du projet mobile :
+    ```bash
+    cd R-colteCheck
+    npm install
+    ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **3. Configuration Firebase**
+  - Le fichier `firebaseConfig.ts` contient déjà une configuration fonctionnelle :
+    - Clés `apiKey`, `authDomain`, `projectId`, etc.
+  - Pour un autre projet Firebase :
+    - Créer un projet sur la console Firebase.
+    - Récupérer les valeurs de configuration Web.
+    - Mettre à jour l’objet `firebaseConfig` dans `firebaseConfig.ts`.
 
-## Get a fresh project
+- **4. Lancer l’application**
+  - Démarrer le bundler Expo :
+    ```bash
+    npm run start
+    ```
+  - Depuis l’interface Expo :
+    - scanner le QR code avec **Expo Go**, ou
+    - lancer un émulateur Android, un simulateur iOS, ou le mode Web.
 
-When you're ready, run:
+- **5. Lint et qualité**
+  - Pour lancer ESLint :
+    ```bash
+    npm run lint
+    ```
 
-```bash
-npm run reset-project
-```
+### Dépendances externes et rôle
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- **Navigation / structure**
+  - `expo-router` : gestion de la navigation par fichiers (`app/`).
+  - `@react-navigation/native`, `@react-navigation/bottom-tabs`, `@react-navigation/elements` : cœur du système de navigation et des onglets bas.
 
-## Learn more
+- **Expo / React Native**
+  - `expo`, `react`, `react-native` : base de l’application mobile.
+  - `react-native-web`, `react-dom` : support du mode Web.
+  - `react-native-safe-area-context` : gestion des zones sûres (`SafeAreaView`).
+  - `react-native-gesture-handler`, `react-native-screens` : navigation fluide et performante.
+  - `react-native-reanimated`, `react-native-worklets` : animations avancées et logique en worklets.
 
-To learn more about developing your project with Expo, look at the following resources:
+- **UI, thème et expérience utilisateur**
+  - `@expo/vector-icons` : icônes vectorielles.
+  - `expo-status-bar` : gestion de la barre de statut.
+  - `expo-system-ui`, `expo-constants`, `expo-font`, `expo-image`, `expo-web-browser`, `expo-linking`, `expo-splash-screen`, `expo-symbols` : fonctionnalités natives supplémentaires (thème, police, images, liens externes, splash screen, etc.).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Dates, formulaires, stockage**
+  - `@react-native-community/datetimepicker` : sélection de dates (périodes de récolte, dates de récolte, date de naissance).
+  - `@react-native-async-storage/async-storage` : stockage local pour la persistance de la session Firebase Auth.
 
-## Join the community
+- **Backend / données**
+  - `firebase` : SDK Firebase pour :
+    - Authentification (`createUserWithEmailAndPassword`, `signInWithEmailAndPassword`, `signOut`, `updatePassword`…).
+    - Firestore (`collection`, `doc`, `getDoc`, `getDocs`, `addDoc`, `updateDoc`, `deleteDoc`, `query`, `where`).
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Outils de développement**
+  - `typescript` : typage statique.
+  - `eslint`, `eslint-config-expo` : linting et règles de code.
+  - `@types/react` : types TypeScript pour React.
