@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import LoadingScreen from '@/components/LoadingScreen';
 
 type ParcelleDetails = {
   nom: string;
@@ -97,15 +98,7 @@ export default function ParcelleDetailsScreen() {
   }, [id]);
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar backgroundColor="#166534" barStyle="light-content" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Chargement de la parcelle...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Chargement de la parcelle..." />;
   }
 
   if (!details) {
@@ -386,17 +379,6 @@ const styles = StyleSheet.create({
   backLinkText: {
     fontSize: 13,
     color: '#4B5563',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 14,
-    color: '#E5E7EB',
   },
   recolteSummaryRow: {
     marginTop: 10,
