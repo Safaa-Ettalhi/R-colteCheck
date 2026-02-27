@@ -199,7 +199,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar backgroundColor="#166534" barStyle="light-content" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#166534" />
+          <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={styles.loadingText}>Chargement du profil...</Text>
         </View>
       </SafeAreaView>
@@ -491,15 +491,15 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+    backgroundColor: '#166534',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#4B5563',
+    color: '#FFFFFF',
   },
   scrollContent: {
     paddingBottom: 32,

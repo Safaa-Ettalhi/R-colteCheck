@@ -153,7 +153,7 @@ export default function ParcelleEditScreen() {
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <StatusBar backgroundColor="#166534" barStyle="light-content" />
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#166534" />
+                    <ActivityIndicator size="large" color="#FFFFFF" />
                     <Text style={styles.loadingText}>Chargement de la parcelle...</Text>
                 </View>
             </SafeAreaView>
@@ -374,7 +374,6 @@ const styles = StyleSheet.create({
     },
     loadingContainer: {
         flex: 1,
-        backgroundColor: '#F9FAFB',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#4B5563',
+        color: '#E5E7EB',
     },
     dateText: {
         fontSize: 15,

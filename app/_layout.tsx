@@ -29,8 +29,15 @@ export default function RootLayout() {
   if (user === undefined) {
     return (
       <ThemeProvider value={theme}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" />
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#166534',
+          }}
+        >
+          <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
       </ThemeProvider>
     );

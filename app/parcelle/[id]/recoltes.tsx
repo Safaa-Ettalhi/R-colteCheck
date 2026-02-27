@@ -227,6 +227,18 @@ export default function RecoltesScreen() {
     setRemarques('');
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <StatusBar backgroundColor="#166534" barStyle="light-content" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Chargement des récoltes...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar backgroundColor="#166534" barStyle="light-content" />
@@ -323,14 +335,7 @@ export default function RecoltesScreen() {
             Liste des récoltes saisies pour cette parcelle.
           </Text>
 
-          {loading ? (
-            <View style={styles.historyEmpty}>
-              <ActivityIndicator size="large" color="#166534" />
-              <Text style={[styles.historyEmptyText, { marginTop: 8 }]}>
-                Chargement des récoltes…
-              </Text>
-            </View>
-          ) : recoltes.length === 0 ? (
+          {recoltes.length === 0 ? (
             <View style={styles.historyEmpty}>
               <Text style={styles.historyEmptyTitle}>Aucune récolte enregistrée</Text>
               <Text style={styles.historyEmptyText}>
@@ -738,5 +743,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#B91C1C',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#E5E7EB',
   },
 });
