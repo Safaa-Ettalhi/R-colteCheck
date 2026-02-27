@@ -8,12 +8,15 @@ import {
     Pressable,
     ActivityIndicator,
     Platform,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { db } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import LoadingScreen from '@/components/LoadingScreen';
+import { parsePositiveNumber, formatDateFr } from '@/utils/validation';
 
 export default function ParcelleEditScreen() {
     const params = useLocalSearchParams();
@@ -78,13 +81,6 @@ export default function ParcelleEditScreen() {
         chargerParcelle();
     }, [id]);
 
-    const formatDate = (d: Date) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-    };
-
     const ouvrirDebutPicker = () => {
         setShowDebutPicker(true);
     };
@@ -99,7 +95,7 @@ export default function ParcelleEditScreen() {
         }
         if (selectedDate) {
             setPeriodeDebutValue(selectedDate);
-            setPeriodeDebut(formatDate(selectedDate));
+            setPeriodeDebut(formatDateFr(selectedDate));
         }
     };
 
@@ -109,7 +105,7 @@ export default function ParcelleEditScreen() {
         }
         if (selectedDate) {
             setPeriodeFinValue(selectedDate);
-            setPeriodeFin(formatDate(selectedDate));
+            setPeriodeFin(formatDateFr(selectedDate));
         }
     };
 
@@ -120,9 +116,8 @@ export default function ParcelleEditScreen() {
             return;
         }
 
-        const surfaceTrim = surface.trim();
-        const parsedSurface = parseFloat(surfaceTrim.replace(',', '.'));
-        if (Number.isNaN(parsedSurface) || parsedSurface <= 0) {
+        const parsedSurface = parsePositiveNumber(surface);
+        if (parsedSurface === null) {
             alert('La surface doit être un nombre strictement supérieur à 0.');
             return;
         }
@@ -137,8 +132,16 @@ export default function ParcelleEditScreen() {
                 periodeDebut: periodeDebut.trim(),
                 periodeFin: periodeFin.trim(),
             });
-
-            alert('Parcelle mise à jour.');
+            Alert.alert(
+              "Succès ", 
+              "La parcelle a été mise à jour avec succès.", 
+              [
+                {
+                  text: "OK",
+                  onPress: () => router.back()
+                }
+              ]
+            );
             router.back();
         } catch (e) {
             console.error('Erreur mise à jour parcelle', e);
@@ -149,15 +152,7 @@ export default function ParcelleEditScreen() {
     };
 
     if (loading) {
-        return (
-            <SafeAreaView style={styles.safeArea} edges={['top']}>
-                <StatusBar backgroundColor="#166534" barStyle="light-content" />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#FFFFFF" />
-                    <Text style={styles.loadingText}>Chargement de la parcelle...</Text>
-                </View>
-            </SafeAreaView>
-        );
+        return <LoadingScreen message="Chargement de la parcelle..." />;
     }
 
     return (
@@ -371,17 +366,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#374151',
         fontWeight: '500',
-    },
-    loadingContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-    },
-    loadingText: {
-        marginTop: 12,
-        fontSize: 14,
-        color: '#E5E7EB',
     },
     dateText: {
         fontSize: 15,
