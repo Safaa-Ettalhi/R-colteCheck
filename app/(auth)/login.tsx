@@ -7,21 +7,24 @@ import {
   StatusBar,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link ,useRouter } from 'expo-router';
 import { auth } from '../../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !motDePasse.trim()) {
-      alert('Email et mot de passe sont obligatoires.');
+      Alert.alert('Connexion', 'Email et mot de passe sont obligatoires.');
       return;
     }
 
@@ -34,9 +37,9 @@ export default function LoginScreen() {
     } catch (e: any) {
       console.error('Erreur Auth', e);
       if (e?.code === 'auth/invalid-credential') {
-        alert('Email ou mot de passe incorrect.');
+        Alert.alert('Connexion', 'Email ou mot de passe incorrect.');
       } else {
-        alert(e?.message ?? "Erreur d'authentification");
+        Alert.alert('Connexion', e?.message ?? "Erreur d'authentification");
       }
     } finally {
       setLoading(false);
@@ -73,14 +76,26 @@ export default function LoginScreen() {
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={motDePasse}
-              onChangeText={setMotDePasse}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={motDePasse}
+                onChangeText={setMotDePasse}
+              />
+              <Pressable
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword((prev) => !prev)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#6B7280"
+                />
+              </Pressable>
+            </View>
           </View>
 
           <Pressable
@@ -174,6 +189,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     fontSize: 14,
     color: '#111827',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#111827',
+  },
+  passwordToggle: {
+    marginLeft: 8,
   },
   primaryButton: {
     marginTop: 14,

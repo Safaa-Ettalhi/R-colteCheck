@@ -8,6 +8,7 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,6 +16,7 @@ import { Link ,useRouter} from 'expo-router';
 import { auth, db } from '../../firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -26,6 +28,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [dateNaissanceDate, setDateNaissanceDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const ouvrirDatePicker = () => {
     setShowDatePicker(true);
@@ -47,17 +50,26 @@ export default function RegisterScreen() {
   };
   const handleRegister = async () => {
     if (!nomComplet.trim() || !dateNaissance.trim() || !email.trim() || !motDePasse.trim()) {
-      alert('Nom complet, date de naissance, email et mot de passe sont obligatoires.');
+      Alert.alert(
+        'Création de compte',
+        'Nom complet, date de naissance, email et mot de passe sont obligatoires.',
+      );
       return;
     }
 
     if (motDePasse.length < 6) {
-      alert('Le mot de passe doit contenir au moins 6 caractères.');
+      Alert.alert(
+        'Création de compte',
+        'Le mot de passe doit contenir au moins 6 caractères.',
+      );
       return;
     }
 
     if (motDePasse !== confirmationMotDePasse) {
-      alert('La confirmation du mot de passe ne correspond pas.');
+      Alert.alert(
+        'Création de compte',
+        'La confirmation du mot de passe ne correspond pas.',
+      );
       return;
     }
 
@@ -85,18 +97,24 @@ export default function RegisterScreen() {
 
       router.push('/(tabs)');
     } catch (e: any) {
-        console.error('Erreur Register', e);
-      
-        if (e?.code === 'auth/email-already-in-use') {
-          alert('Cet email est déjà utilisé. Utilise un autre email ou connecte-toi.');
-        } else if (e?.code === 'auth/network-request-failed') {
-          alert('Problème de connexion internet. Vérifie ta connexion et réessaie.');
-        } else {
-          alert(e?.message ?? 'Erreur lors de la création du compte');
-        }
-      } finally {
-        setLoading(false);
+      console.error('Erreur Register', e);
+
+      if (e?.code === 'auth/email-already-in-use') {
+        Alert.alert(
+          'Création de compte',
+          'Cet email est déjà utilisé. Utilise un autre email ou connecte-toi.',
+        );
+      } else if (e?.code === 'auth/network-request-failed') {
+        Alert.alert(
+          'Création de compte',
+          'Problème de connexion internet. Vérifie ta connexion et réessaie.',
+        );
+      } else {
+        Alert.alert('Création de compte', e?.message ?? 'Erreur lors de la création du compte');
       }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -159,26 +177,50 @@ export default function RegisterScreen() {
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={motDePasse}
-              onChangeText={setMotDePasse}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={motDePasse}
+                onChangeText={setMotDePasse}
+              />
+              <Pressable
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword((prev) => !prev)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#6B7280"
+                />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.formGroup}>
             <Text style={styles.label}>Confirmer le mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={confirmationMotDePasse}
-              onChangeText={setConfirmationMotDePasse}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showPassword}
+                value={confirmationMotDePasse}
+                onChangeText={setConfirmationMotDePasse}
+              />
+              <Pressable
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword((prev) => !prev)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#6B7280"
+                />
+              </Pressable>
+            </View>
           </View>
 
           <Pressable
@@ -270,6 +312,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     fontSize: 14,
     color: '#111827',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#111827',
+  },
+  passwordToggle: {
+    marginLeft: 8,
   },
   dateText: {
     fontSize: 14,
