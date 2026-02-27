@@ -1,10 +1,5 @@
 ## RécolteCheck – Documentation du projet mobile
 
-### Dépôt GitHub
-
-Le code source de cette application est hébergé sur GitHub :  
-[`https://github.com/Safaa-Ettalhi/R-colteCheck`](https://github.com/Safaa-Ettalhi/R-colteCheck)
-
 ### Architecture de l’application
 
 - **Stack principale**
@@ -36,6 +31,13 @@ Le code source de cette application est hébergé sur GitHub :
     - Regroupent le thème de couleur, les composants UI réutilisables (icônes, onglets haptiques) et le hook de thème (`use-color-scheme`).
 
 ### Guide d’installation et de configuration
+
+- **0. Cloner le projet **
+  - Ouvrir un terminal (ou PowerShell) et se placer dans le dossier où tu veux mettre le projet, puis taper :
+    ```bash
+    git clone https://github.com/Safaa-Ettalhi/R-colteCheck.git
+    cd R-colteCheck
+    ```
 
 - **1. Pré-requis**
   - Node.js (version LTS recommandée).
