@@ -1,5 +1,37 @@
 ## RécolteCheck – Documentation du projet mobile
 
+### Démonstrations (captures d’écran)
+
+Quelques écrans de l’application mobile :
+
+- **Écran de connexion**
+
+  ![Écran de connexion](assets/screenshots/login.png)
+
+- **Tableau de bord des parcelles**
+
+  ![Tableau de bord](assets/screenshots/dashboard.png)
+
+- **Détails d’une parcelle**
+
+  ![Détails parcelle](assets/screenshots/details.png)
+
+- **Liste et gestion des récoltes**
+
+  ![Récoltes](assets/screenshots/recoltes.png)
+
+- **Profil utilisateur**
+
+  ![Profil](assets/screenshots/profil.png)
+
+- **Écran d’inscription**
+
+  ![Inscription](assets/screenshots/register.png)
+
+- **Écran sécurité / mot de passe**
+
+  ![Sécurité](assets/screenshots/securiter.png)
+
 ### Architecture de l’application
 
 - **Stack principale**
