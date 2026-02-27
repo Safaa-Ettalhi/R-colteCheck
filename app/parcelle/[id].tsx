@@ -6,6 +6,7 @@ import {
   StatusBar,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
@@ -44,7 +45,7 @@ export default function ParcelleDetailsScreen() {
         const snap = await getDoc(ref);
 
         if (!snap.exists()) {
-          alert("Cette parcelle n'existe plus.");
+          Alert.alert('Parcelle', "Cette parcelle n'existe plus.");
           router.back();
           return;
         }
@@ -87,7 +88,10 @@ export default function ParcelleDetailsScreen() {
         setTotalPoids(total);
       } catch (e) {
         console.error('Erreur chargement détails parcelle', e);
-        alert('Impossible de charger les détails de la parcelle.');
+        Alert.alert(
+          'Parcelle',
+          'Impossible de charger les détails de la parcelle.',
+        );
         router.back();
       } finally {
         setLoading(false);

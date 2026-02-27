@@ -66,12 +66,12 @@ export default function ParcelleEditScreen() {
                     setPeriodeDebut(dataPeriodeDebut);
                     setPeriodeFin(dataPeriodeFin);
                 } else {
-                    alert("Cette parcelle n'existe plus.");
+                    Alert.alert('Parcelle', "Cette parcelle n'existe plus.");
                     router.back();
                 }
             } catch (e) {
                 console.error('Erreur chargement parcelle', e);
-                alert('Impossible de charger la parcelle.');
+                Alert.alert('Parcelle', 'Impossible de charger la parcelle.');
                 router.back();
             } finally {
                 setLoading(false);
@@ -112,13 +112,16 @@ export default function ParcelleEditScreen() {
     const enregistrer = async () => {
         if (!id) return;
         if (!nom.trim()) {
-            alert('Le nom de la parcelle est obligatoire.');
+            Alert.alert('Parcelle', 'Le nom de la parcelle est obligatoire.');
             return;
         }
 
         const parsedSurface = parsePositiveNumber(surface);
         if (parsedSurface === null) {
-            alert('La surface doit être un nombre strictement supérieur à 0.');
+            Alert.alert(
+              'Parcelle',
+              'La surface doit être un nombre strictement supérieur à 0.',
+            );
             return;
         }
 
@@ -132,20 +135,18 @@ export default function ParcelleEditScreen() {
                 periodeDebut: periodeDebut.trim(),
                 periodeFin: periodeFin.trim(),
             });
-            Alert.alert(
-              "Succès ", 
-              "La parcelle a été mise à jour avec succès.", 
-              [
-                {
-                  text: "OK",
-                  onPress: () => router.back()
-                }
-              ]
-            );
-            router.back();
+            Alert.alert('Parcelle', 'Parcelle mise à jour.', [
+              {
+                text: 'OK',
+                onPress: () => router.back(),
+              },
+            ]);
         } catch (e) {
             console.error('Erreur mise à jour parcelle', e);
-            alert("Impossible d'enregistrer les modifications.");
+            Alert.alert(
+              'Parcelle',
+              "Impossible d'enregistrer les modifications.",
+            );
         } finally {
             setSaving(false);
         }

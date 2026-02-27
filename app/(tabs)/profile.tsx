@@ -8,6 +8,7 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth, db } from '../../firebaseConfig';
@@ -113,7 +114,7 @@ export default function ProfileScreen() {
     if (!user) return;
 
     if (!fullName.trim()) {
-      alert('Le nom complet est obligatoire.');
+      Alert.alert('Profil', 'Le nom complet est obligatoire.');
       return;
     }
 
@@ -127,10 +128,10 @@ export default function ProfileScreen() {
         gender: gender.trim(),
         zone: zone.trim(),
       });
-      alert('Profil mis à jour.');
+      Alert.alert('Profil', 'Profil mis à jour.');
     } catch (e) {
       console.error('Erreur mise à jour profil', e);
-      alert('Impossible de mettre à jour le profil.');
+      Alert.alert('Profil', 'Impossible de mettre à jour le profil.');
     } finally {
       setSaving(false);
     }
@@ -139,22 +140,31 @@ export default function ProfileScreen() {
   const changerMotDePasse = async () => {
     const user = auth.currentUser;
     if (!user || !user.email) {
-      alert('Utilisateur non disponible.');
+      Alert.alert('Sécurité', 'Utilisateur non disponible.');
       return;
     }
 
     if (!currentPassword || !newPassword || !confirmNewPassword) {
-      alert('Tous les champs mot de passe sont obligatoires.');
+      Alert.alert(
+        'Sécurité',
+        'Tous les champs mot de passe sont obligatoires.',
+      );
       return;
     }
 
     if (newPassword.length < 6) {
-      alert('Le nouveau mot de passe doit contenir au moins 6 caractères.');
+      Alert.alert(
+        'Sécurité',
+        'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+      );
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      alert('La confirmation du nouveau mot de passe ne correspond pas.');
+      Alert.alert(
+        'Sécurité',
+        'La confirmation du nouveau mot de passe ne correspond pas.',
+      );
       return;
     }
 
@@ -168,17 +178,20 @@ export default function ProfileScreen() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-      alert('Mot de passe mis à jour.');
+      Alert.alert('Sécurité', 'Mot de passe mis à jour.');
     } catch (e: any) {
       console.error('Erreur changement mot de passe', e);
       if (e?.code === 'auth/wrong-password') {
-        alert('Mot de passe actuel incorrect.');
+        Alert.alert('Sécurité', 'Mot de passe actuel incorrect.');
       } else if (e?.code === 'auth/too-many-requests') {
-        alert('Trop de tentatives. Réessaie plus tard.');
+        Alert.alert('Sécurité', 'Trop de tentatives. Réessaie plus tard.');
       } else if (e?.code === 'auth/requires-recent-login') {
-        alert('Merci de vous reconnecter puis réessayer de changer le mot de passe.');
+        Alert.alert(
+          'Sécurité',
+          'Merci de vous reconnecter puis réessayer de changer le mot de passe.',
+        );
       } else {
-        alert('Impossible de changer le mot de passe.');
+        Alert.alert('Sécurité', 'Impossible de changer le mot de passe.');
       }
     } finally {
       setChangingPassword(false);
@@ -191,7 +204,7 @@ export default function ProfileScreen() {
       router.replace('/(auth)/login');
     } catch (e) {
       console.error('Erreur déconnexion', e);
-      alert('Impossible de se déconnecter.');
+      Alert.alert('Profil', 'Impossible de se déconnecter.');
     }
   };
 

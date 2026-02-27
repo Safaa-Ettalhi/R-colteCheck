@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Link, useFocusEffect } from 'expo-router';
 import { auth, db } from '../../firebaseConfig';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { parsePositiveNumber } from '@/utils/validation';
 type Parcelle = {
   id: string;
   nom: string;
@@ -93,7 +94,7 @@ export default function ParcellesScreen() {
             setTotalPoidsGlobal(totalPoids);
     } catch (e) {
       console.error('Erreur lors du chargement des parcelles', e);
-      alert('Impossible de charger les parcelles (voir console).');
+      Alert.alert('Parcelles', 'Impossible de charger les parcelles (voir console).');
     }
   }, []);
 
@@ -177,19 +178,22 @@ export default function ParcellesScreen() {
       const periodeFinTrim = periodeFin.trim();
   
       if (!nomTrim) {
-        alert('Le nom de la parcelle est obligatoire.');
+        Alert.alert('Parcelle', 'Le nom de la parcelle est obligatoire.');
         return;
       }
   
-      const parsedSurface = parseFloat(surfaceTrim.replace(',', '.'));
-      if (Number.isNaN(parsedSurface) || parsedSurface <= 0) {
-        alert('La surface doit être un nombre strictement supérieur à 0.');
+      const parsedSurface = parsePositiveNumber(surfaceTrim);
+      if (parsedSurface === null) {
+        Alert.alert(
+          'Parcelle',
+          'La surface doit être un nombre strictement supérieur à 0.',
+        );
         return;
       }
   
       const user = auth.currentUser;
       if (!user) {
-        alert('Vous devez être connecté pour ajouter une parcelle.');
+        Alert.alert('Parcelle', 'Vous devez être connecté pour ajouter une parcelle.');
         return;
       }
   
@@ -218,9 +222,10 @@ export default function ParcellesScreen() {
         setCulture('');
         setPeriodeDebut('');
         setPeriodeFin('');
+        Alert.alert('Parcelle', 'Parcelle ajoutée avec succès.');
       } catch (e) {
         console.error('Erreur lors de l’ajout de la parcelle', e);
-        alert('Impossible d’ajouter la parcelle (voir console).');
+        Alert.alert('Parcelle', 'Impossible d’ajouter la parcelle (voir console).');
       }
     };
 
@@ -256,7 +261,7 @@ export default function ParcellesScreen() {
       setParcelles((prev) => prev.filter((parcelle) => parcelle.id !== parcelleId));
     } catch (e) {
       console.error('Erreur lors de la suppression de la parcelle et des récoltes', e);
-      alert("Impossible de supprimer la parcelle (voir console).");
+      Alert.alert('Parcelle', "Impossible de supprimer la parcelle (voir console).");
     }
   };
   return (

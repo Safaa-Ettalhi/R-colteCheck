@@ -102,19 +102,25 @@ export default function RecoltesScreen() {
   };
   const ajouterRecolte = async () => {
     if (!date.trim()) {
-      alert('La date est obligatoire.');
+      Alert.alert('Récolte', 'La date est obligatoire.');
       return;
     }
 
     const parsedPoids = parsePositiveNumber(poids);
     if (parsedPoids === null) {
-      alert('Le poids doit être un nombre strictement supérieur à 0.');
+      Alert.alert(
+        'Récolte',
+        'Le poids doit être un nombre strictement supérieur à 0.',
+      );
       return;
     }
 
     const user = auth.currentUser;
     if (!user) {
-      alert('Vous devez être connecté pour enregistrer une récolte.');
+      Alert.alert(
+        'Récolte',
+        'Vous devez être connecté pour enregistrer une récolte.',
+      );
       return;
     }
 
@@ -161,6 +167,11 @@ export default function RecoltesScreen() {
         setRecoltes((prev) => [...prev, nouvelle]);
       }
 
+      Alert.alert(
+        'Récolte',
+        editingId ? 'Récolte mise à jour.' : 'Récolte enregistrée.',
+      );
+
       setEditingId(null);
       setDate('');
       setDateValue(null);
@@ -169,7 +180,10 @@ export default function RecoltesScreen() {
       setRemarques('');
     } catch (e) {
       console.warn(e);
-      alert("Erreur lors de l'enregistrement. Réessayez.");
+      Alert.alert(
+        'Récolte',
+        "Erreur lors de l'enregistrement. Réessayez.",
+      );
     } finally {
       setSaving(false);
     }
@@ -179,16 +193,23 @@ export default function RecoltesScreen() {
   const supprimerRecolte = async (recolteId: string) => {
     const user = auth.currentUser;
     if (!user) {
-      alert('Vous devez être connecté pour supprimer une récolte.');
+      Alert.alert(
+        'Récolte',
+        'Vous devez être connecté pour supprimer une récolte.',
+      );
       return;
     }
 
     try {
       await deleteDoc(doc(db, 'recoltes', recolteId));
       setRecoltes((prev) => prev.filter((r) => r.id !== recolteId));
+      Alert.alert('Récolte', 'Récolte supprimée.');
     } catch (e) {
       console.warn(e);
-      alert('Erreur lors de la suppression. Réessayez.');
+      Alert.alert(
+        'Récolte',
+        'Erreur lors de la suppression. Réessayez.',
+      );
     }
   };
   const confirmerSuppressionRecolte = (recolteId: string) => {
