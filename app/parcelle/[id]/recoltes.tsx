@@ -25,6 +25,8 @@ import {
   doc,
   updateDoc,
 } from 'firebase/firestore';
+import LoadingScreen from '@/components/LoadingScreen';
+import { parsePositiveNumber, formatDateFr } from '@/utils/validation';
 
 type Recolte = {
   id: string;
@@ -95,11 +97,7 @@ export default function RecoltesScreen() {
     }
     if (selectedDate) {
       setDateValue(selectedDate);
-      const d = selectedDate;
-      const formatted = `${String(d.getDate()).padStart(2, '0')}/${String(
-        d.getMonth() + 1,
-      ).padStart(2, '0')}/${d.getFullYear()}`;
-      setDate(formatted);
+      setDate(formatDateFr(selectedDate));
     }
   };
   const ajouterRecolte = async () => {
@@ -108,9 +106,8 @@ export default function RecoltesScreen() {
       return;
     }
 
-    const poidsTrim = poids.trim();
-    const parsedPoids = parseFloat(poidsTrim.replace(',', '.'));
-    if (Number.isNaN(parsedPoids) || parsedPoids <= 0) {
+    const parsedPoids = parsePositiveNumber(poids);
+    if (parsedPoids === null) {
       alert('Le poids doit être un nombre strictement supérieur à 0.');
       return;
     }
@@ -228,15 +225,7 @@ export default function RecoltesScreen() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar backgroundColor="#166534" barStyle="light-content" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Chargement des récoltes...</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingScreen message="Chargement des récoltes..." />;
   }
 
   return (
@@ -743,16 +732,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#B91C1C',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#E5E7EB',
   },
 });
