@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link ,useRouter } from 'expo-router';
 import { auth } from '../../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -78,7 +77,7 @@ export default function LoginScreen() {
             <Text style={styles.label}>Mot de passe</Text>
             <View style={styles.passwordRow}>
               <TextInput
-                style={styles.passwordInput}
+                style={[styles.input, styles.passwordInput]}
                 placeholder="••••••••"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
@@ -89,11 +88,9 @@ export default function LoginScreen() {
                 style={styles.passwordToggle}
                 onPress={() => setShowPassword((prev) => !prev)}
               >
-                <Ionicons
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={20}
-                  color="#6B7280"
-                />
+                <Text style={styles.passwordToggleText}>
+                  {showPassword ? 'Masquer' : 'Afficher'}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -193,20 +190,19 @@ const styles = StyleSheet.create({
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
   },
   passwordInput: {
     flex: 1,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#111827',
   },
   passwordToggle: {
     marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  passwordToggleText: {
+    fontSize: 12,
+    color: '#166534',
+    fontWeight: '600',
   },
   primaryButton: {
     marginTop: 14,
